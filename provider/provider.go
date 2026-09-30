@@ -97,12 +97,14 @@ func (p AirflowProvider) Configure(ctx context.Context, req provider.ConfigureRe
 func (p AirflowProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewAirflowFabUserResource,
+		NewAirflowFabRoleResource,
 	}
 }
 
 func (p AirflowProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewAirflowFabUserDataSource,
+		NewAirflowFabRoleDataSource,
 	}
 }
 

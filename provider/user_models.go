@@ -84,7 +84,7 @@ func (model *AirflowFabUserResourceModel) UpdateUserInApi(cli *airflow.Client, p
 	})
 }
 
-func convertRolesToStringList(roles []airflow.Role) types.List {
+func convertRolesToStringList(roles []airflow.UserRole) types.List {
 	var roleStrings []attr.Value
 	for _, r := range roles {
 		roleStrings = append(roleStrings, types.StringValue(r.Name))
@@ -95,8 +95,8 @@ func convertRolesToStringList(roles []airflow.Role) types.List {
 }
 
 
-func convertStringListToRoles(list types.List) []airflow.Role {
-	var roles []airflow.Role
+func convertStringListToRoles(list types.List) []airflow.UserRole {
+	var roles []airflow.UserRole
 	if list.IsNull() || list.IsUnknown() {
 		return nil
 	}
@@ -104,12 +104,12 @@ func convertStringListToRoles(list types.List) []airflow.Role {
 	var rawRoles []attr.Value
 	list.ElementsAs(context.Background(), &rawRoles, false)
 	for _, v := range rawRoles {
-		roles = append(roles, airflow.Role{Name: v.String()})
+		roles = append(roles, airflow.UserRole{Name: v.String()})
 	}
 	return roles
 }
 
-func fetchUserDataSourceModelFromApi(cli *airflow.Client, username string) (*AirflowFabUserDataSourceModel, error) {
+func NewUserDataSourceModelFromApi(cli *airflow.Client, username string) (*AirflowFabUserDataSourceModel, error) {
 	user, err := cli.GetUser(username)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch user: %w", err)

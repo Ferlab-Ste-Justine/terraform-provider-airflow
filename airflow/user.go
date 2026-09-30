@@ -8,7 +8,7 @@ import (
 	"net/url"
 )
 
-type Role struct {
+type UserRole struct {
 	Name string `json:"name"`
 }
 
@@ -17,31 +17,31 @@ type CreateUserRequest struct {
 	Email      string       `json:"email"`
 	FirstName  string       `json:"first_name"`
 	LastName   string       `json:"last_name"`
-	Roles      []Role       `json:"roles"`
+	Roles      []UserRole   `json:"roles"`
 	Password   string       `json:"password"`
 }
 
 type UpdateUserRequest struct {
-	Username   *string `json:"username,omitempty"`
-	Email      *string `json:"email,omitempty"`
-	FirstName  *string `json:"first_name,omitempty"`
-	LastName   *string `json:"last_name,omitempty"`
-	Roles      *[]Role `json:"roles,omitempty"`
-	Password   *string `json:"password,omitempty"`
+	Username   *string     `json:"username,omitempty"`
+	Email      *string     `json:"email,omitempty"`
+	FirstName  *string     `json:"first_name,omitempty"`
+	LastName   *string     `json:"last_name,omitempty"`
+	Roles      *[]UserRole `json:"roles,omitempty"`
+	Password   *string     `json:"password,omitempty"`
 }
 
 type GetUserResponse struct {
-	Username         string   `json:"username"`
-	Email            string   `json:"email"`
-	FirstName        string   `json:"first_name"`
-	LastName         string   `json:"last_name"`
-	Roles            []Role   `json:"roles"`
-	Active           *bool    `json:"active"`
-	LastLogin        *string  `json:"last_login"` // date-time
-	LoginCount       *int64   `json:"login_count"`
-	FailLoginCount   *int64   `json:"fail_login_count"`
-	CreatedOn        *string  `json:"created_on"` // date-time
-	ChangedOn        *string  `json:"changed_on"` // date-time
+	Username         string     `json:"username"`
+	Email            string     `json:"email"`
+	FirstName        string     `json:"first_name"`
+	LastName         string     `json:"last_name"`
+	Roles            []UserRole `json:"roles"`
+	Active           *bool      `json:"active"`
+	LastLogin        *string    `json:"last_login"` // date-time
+	LoginCount       *int64     `json:"login_count"`
+	FailLoginCount   *int64     `json:"fail_login_count"`
+	CreatedOn        *string    `json:"created_on"` // date-time
+	ChangedOn        *string    `json:"changed_on"` // date-time
 }
 
 func (cli *Client) CreateUser(userReq CreateUserRequest) error {
