@@ -15,9 +15,7 @@ import (
 
 var _ provider.Provider = AirflowProvider{}
 
-type AirflowProvider struct {
-	version string
-}
+type AirflowProvider struct {}
 
 type AirflowProviderModel struct {
 	Username types.String `tfsdk:"username"`
@@ -108,10 +106,8 @@ func (p AirflowProvider) DataSources(ctx context.Context) []func() datasource.Da
 	}
 }
 
-func New(version string) func() provider.Provider {
+func New() func() provider.Provider {
 	return func() provider.Provider {
-		return AirflowProvider{
-			version: version,
-		}
+		return AirflowProvider{}
 	}
 }

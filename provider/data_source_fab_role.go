@@ -49,10 +49,22 @@ func (d *AirflowFabRoleDataSource) Schema(_ context.Context, _ datasource.Schema
 }
 
 func (d *AirflowFabRoleDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
 	d.client = req.ProviderData.(*airflow.Client)
 }
 
 func (d *AirflowFabRoleDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	if d.client == nil {
+		resp.Diagnostics.AddError(
+			"Unconfigured Airflow Client",
+			"Expected configured Airflow client. Please report this issue to the provider developers.",
+		)
+		return
+	}
+	
 	var config AirflowFabRoleDataSourceModel
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 

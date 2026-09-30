@@ -51,10 +51,22 @@ func (r *AirflowFabRoleResource) Schema(_ context.Context, _ resource.SchemaRequ
 }
 
 func (r *AirflowFabRoleResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
 	r.client = req.ProviderData.(*airflow.Client)
 }
 
 func (r *AirflowFabRoleResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	if r.client == nil {
+		resp.Diagnostics.AddError(
+			"Unconfigured Airflow Client",
+			"Expected configured Airflow client. Please report this issue to the provider developers.",
+		)
+		return
+	}
+
 	var plan AirflowFabRoleResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -77,6 +89,14 @@ func (r *AirflowFabRoleResource) Create(ctx context.Context, req resource.Create
 }
 
 func (r *AirflowFabRoleResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	if r.client == nil {
+		resp.Diagnostics.AddError(
+			"Unconfigured Airflow Client",
+			"Expected configured Airflow client. Please report this issue to the provider developers.",
+		)
+		return
+	}
+
 	var state AirflowFabRoleResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -90,6 +110,14 @@ func (r *AirflowFabRoleResource) Read(ctx context.Context, req resource.ReadRequ
 }
 
 func (r *AirflowFabRoleResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	if r.client == nil {
+		resp.Diagnostics.AddError(
+			"Unconfigured Airflow Client",
+			"Expected configured Airflow client. Please report this issue to the provider developers.",
+		)
+		return
+	}
+
 	var plan, state AirflowFabRoleResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -110,6 +138,14 @@ func (r *AirflowFabRoleResource) Update(ctx context.Context, req resource.Update
 }
 
 func (r *AirflowFabRoleResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	if r.client == nil {
+		resp.Diagnostics.AddError(
+			"Unconfigured Airflow Client",
+			"Expected configured Airflow client. Please report this issue to the provider developers.",
+		)
+		return
+	}
+
 	var state AirflowFabRoleResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 

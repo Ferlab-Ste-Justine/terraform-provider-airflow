@@ -6,12 +6,11 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
+
 	"github.com/Ferlab-Ste-Justine/terraform-provider-airflow/provider"
 )
 
 var (
-	version string = "dev"
-
 	debugMode = "false"
 )
 
@@ -26,7 +25,7 @@ func main() {
 		Debug:   debug,
 	}
 
-	err := providerserver.Serve(context.Background(), provider.New(version), opts)
+	err := providerserver.Serve(context.Background(), provider.New(), opts)
 
 	if err != nil {
 		log.Fatal(err.Error())
