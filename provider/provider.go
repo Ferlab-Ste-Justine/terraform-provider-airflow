@@ -30,7 +30,7 @@ func (p AirflowProvider) Metadata(ctx context.Context, req provider.MetadataRequ
 
 func (p AirflowProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Terraform Provider for Airflow.",
+		Description: "Provider for airflow version 3.",
 		Attributes: map[string]schema.Attribute{
 			"username": schema.StringAttribute{
 				MarkdownDescription: "Username for Airflow API authentication.",

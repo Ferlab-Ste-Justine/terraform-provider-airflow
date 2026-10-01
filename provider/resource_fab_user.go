@@ -6,6 +6,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+    "github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 
 	"github.com/Ferlab-Ste-Justine/terraform-provider-airflow/airflow"
 )
@@ -26,19 +29,52 @@ func (r *AirflowFabUserResource) Metadata(_ context.Context, req resource.Metada
 
 func (r *AirflowFabUserResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manages Airflow FAB users.",
+		Description: "An Airflow FAB user.",
 		Attributes: map[string]schema.Attribute{
-			"username": schema.StringAttribute{Required: true},
+			"username": schema.StringAttribute{
+				Description: "User id for dashboard login and api token generation.",
+				Required: true,
+                Validators: []validator.String{
+                    stringvalidator.LengthAtLeast(1),
+                },
+			},
 			"password": schema.StringAttribute{
+				Description: "User authentication secret for dashboard login and api token generation.",
 				Required:  true,
 				Sensitive: true,
+                Validators: []validator.String{
+                    stringvalidator.LengthAtLeast(1),
+                },
 			},
-			"email":      schema.StringAttribute{Required: true},
-			"first_name": schema.StringAttribute{Required: true},
-			"last_name":  schema.StringAttribute{Required: true},
+			"email":      schema.StringAttribute{
+				Description: "User's email.",
+				Required: true,
+                Validators: []validator.String{
+                    stringvalidator.LengthAtLeast(1),
+                },
+			},
+			"first_name": schema.StringAttribute{
+				Description: "User's first name.",
+				Required: true,
+                Validators: []validator.String{
+                    stringvalidator.LengthAtLeast(1),
+                },
+			},
+			"last_name":  schema.StringAttribute{
+				Description: "User's last name.",
+				Required: true,
+                Validators: []validator.String{
+                    stringvalidator.LengthAtLeast(1),
+                },
+			},
 			"roles": schema.SetAttribute{
+				Description: "Set of user's role. Note that because changing a role's permission causes a recreation and this field is evaluate for reconciliation during the plan phase, changing a role's permission and assigning it to a user in the same terraform apply will cause the user to temporarily lose the role until another terraform apply is performed.",
 				ElementType: types.StringType,
 				Required:    true,
+				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(1),
+					setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
+				},
 			},
 		},
 	}

@@ -5,6 +5,11 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 
 	"github.com/Ferlab-Ste-Justine/terraform-provider-airflow/airflow"
 )
@@ -25,23 +30,39 @@ func (r *AirflowFabRoleResource) Metadata(_ context.Context, req resource.Metada
 
 func (r *AirflowFabRoleResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Manages Airflow FAB roles.",
+		Description: "An Airflow FAB role.",
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
+				Description: "Name of the role.",
 				Required: true,
+                Validators: []validator.String{
+                    stringvalidator.LengthAtLeast(1),
+                },
 			},
 			"permissions": schema.SetNestedAttribute{
-				Optional:    true,
-				Description: "A list of permissions (action/resource pairs) assigned to the role.",
+				Description: "A list of permissions (action/resource pairs) assigned to the role. Note that because of limitations with airflow's PATCH api, changing this is a replacement operation. The role will be re-created and needs to be re-assigned to users.",
+				Required: true,
+				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(1),
+				},
+				PlanModifiers: []planmodifier.Set{
+					setplanmodifier.RequiresReplace(),
+				},
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"action": schema.StringAttribute{
-							Required:    true,
 							Description: "The name of the action (e.g., can_read, can_edit).",
+							Required:    true,
+							Validators: []validator.String{
+								stringvalidator.LengthAtLeast(1),
+							},
 						},
 						"resource": schema.StringAttribute{
-							Required:    true,
 							Description: "The name of the resource (e.g., DAGs, Dashboard).",
+							Required:    true,
+							Validators: []validator.String{
+								stringvalidator.LengthAtLeast(1),
+							},
 						},
 					},
 				},
