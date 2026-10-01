@@ -8,13 +8,62 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-    "github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
-    "github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 
 	"github.com/Ferlab-Ste-Justine/terraform-provider-airflow/airflow"
 )
 
 var _ resource.Resource = (*AirflowFabRoleResource)(nil)
+
+type RequireCanReadWebsiteInRoleValidator struct{}
+
+func (val RequireCanReadWebsiteInRoleValidator) Description(_ context.Context) string {
+	return "Validates that the permissions set contains 'can_read' on 'Website'."
+}
+
+func (val RequireCanReadWebsiteInRoleValidator) MarkdownDescription(ctx context.Context) string {
+	return val.Description(ctx)
+}
+
+func (val RequireCanReadWebsiteInRoleValidator) ValidateSet(ctx context.Context, req validator.SetRequest, resp *validator.SetResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+
+	found := false
+	for _, elem := range req.ConfigValue.Elements() {
+		obj, ok := elem.(types.Object)
+		if !ok || obj.IsNull() || obj.IsUnknown() {
+			continue
+		}
+
+		var perm PermissionModel
+		resp.Diagnostics.Append(obj.As(ctx, &perm, basetypes.ObjectAsOptions{})...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		if perm.Action.IsUnknown() || perm.Resource.IsUnknown() {
+			continue
+		} 
+
+		if perm.Action.ValueString() == "can_read" && perm.Resource.ValueString() == "Website" {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		resp.Diagnostics.AddAttributeError(
+			req.Path,
+			"Missing Required Permission",
+			"Airflow 3 automatically assigns 'can_read' on 'Website' to all custom roles. This permission must be explicitly included in the configuration of your roles to be consistent with what is in airflow.",
+		)
+	}
+}
 
 type AirflowFabRoleResource struct {
 	client *airflow.Client
@@ -35,15 +84,16 @@ func (r *AirflowFabRoleResource) Schema(_ context.Context, _ resource.SchemaRequ
 			"name": schema.StringAttribute{
 				Description: "Name of the role.",
 				Required: true,
-                Validators: []validator.String{
-                    stringvalidator.LengthAtLeast(1),
-                },
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"permissions": schema.SetNestedAttribute{
-				Description: "A list of permissions (action/resource pairs) assigned to the role. Note that because of limitations with airflow's PATCH api, changing this is a replacement operation. The role will be re-created and needs to be re-assigned to users.",
+				Description: "A list of permissions (action/resource pairs) assigned to the role. Note that because of limitations with airflow's PATCH api, changing this is a replacement operation. The role will be re-created and needs to be re-assigned to users. You need to grant `can_read` on `Website` to all custom roles. Airflow implicitly adds it and this provider enforces it.",
 				Required: true,
 				Validators: []validator.Set{
 					setvalidator.SizeAtLeast(1),
+					RequireCanReadWebsiteInRoleValidator{},
 				},
 				PlanModifiers: []planmodifier.Set{
 					setplanmodifier.RequiresReplace(),

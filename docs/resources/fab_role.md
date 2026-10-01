@@ -43,7 +43,7 @@ resource "airflow_fab_user" "test" {
 ### Required
 
 - `name` (String) Name of the role.
-- `permissions` (Attributes Set) A list of permissions (action/resource pairs) assigned to the role. Note that because of limitations with airflow's PATCH api, changing this is a replacement operation. The role will be re-created and needs to be re-assigned to users. (see [below for nested schema](#nestedatt--permissions))
+- `permissions` (Attributes Set) A list of permissions (action/resource pairs) assigned to the role. Note that because of limitations with airflow's PATCH api, changing this is a replacement operation. The role will be re-created and needs to be re-assigned to users. You need to grant `can_read` on `Website` to all custom roles. Airflow implicitly adds it and this provider enforces it. (see [below for nested schema](#nestedatt--permissions))
 
 <a id="nestedatt--permissions"></a>
 ### Nested Schema for `permissions`
