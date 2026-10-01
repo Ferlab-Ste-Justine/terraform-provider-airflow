@@ -32,7 +32,7 @@ func (d *AirflowFabUserDataSource) Schema(_ context.Context, _ datasource.Schema
 			"email":    schema.StringAttribute{Computed: true},
 			"first_name": schema.StringAttribute{Computed: true},
 			"last_name": schema.StringAttribute{Computed: true},
-			"roles": schema.ListAttribute{
+			"roles": schema.SetAttribute{
 				Computed:    true,
 				ElementType: types.StringType,
 			},

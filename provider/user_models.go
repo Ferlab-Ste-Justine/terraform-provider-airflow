@@ -15,7 +15,7 @@ type AirflowFabUserDataSourceModel struct {
 	Email          types.String `tfsdk:"email"`
 	FirstName      types.String `tfsdk:"first_name"`
 	LastName       types.String `tfsdk:"last_name"`
-	Roles          types.List   `tfsdk:"roles"`
+	Roles          types.Set    `tfsdk:"roles"`
 	Active         types.Bool   `tfsdk:"active"`
 	CreatedOn      types.String `tfsdk:"created_on"`
 	ChangedOn      types.String `tfsdk:"changed_on"`
@@ -30,7 +30,7 @@ type AirflowFabUserResourceModel struct {
 	Email     types.String `tfsdk:"email"`
 	FirstName types.String `tfsdk:"first_name"`
 	LastName  types.String `tfsdk:"last_name"`
-	Roles     types.List   `tfsdk:"roles"`
+	Roles     types.Set    `tfsdk:"roles"`
 }
 
 func NewUserResourceModelFromApi(ctx context.Context, cli *airflow.Client, username string) (*AirflowFabUserResourceModel, error) {
@@ -39,7 +39,7 @@ func NewUserResourceModelFromApi(ctx context.Context, cli *airflow.Client, usern
 		return nil, fmt.Errorf("failed to fetch user: %w", err)
 	}
 
-	roles := apiUserRolesToTfStringList(user.Roles)
+	roles := apiUserRolesToTfStringSet(user.Roles)
 
 	model := &AirflowFabUserResourceModel{
 		Username:  types.StringValue(user.Username),
@@ -53,7 +53,7 @@ func NewUserResourceModelFromApi(ctx context.Context, cli *airflow.Client, usern
 }
 
 func (model *AirflowFabUserResourceModel) CreateUserInApi(ctx context.Context, cli *airflow.Client) error {
-	roles := tfStringListToApiUserRoles(model.Roles)
+	roles := tfStringSetToApiUserRoles(model.Roles)
 
 	return cli.CreateUser(ctx, airflow.CreateUserRequest{
 		Username:  model.Username.ValueString(),
@@ -66,7 +66,7 @@ func (model *AirflowFabUserResourceModel) CreateUserInApi(ctx context.Context, c
 }
 
 func (model *AirflowFabUserResourceModel) UpdateUserInApi(ctx context.Context, cli *airflow.Client, preExistingUsername string) error {
-	roles := tfStringListToApiUserRoles(model.Roles)
+	roles := tfStringSetToApiUserRoles(model.Roles)
 
 	username := model.Username.ValueString()
 	password := model.Password.ValueString()
@@ -84,25 +84,25 @@ func (model *AirflowFabUserResourceModel) UpdateUserInApi(ctx context.Context, c
 	})
 }
 
-func apiUserRolesToTfStringList(roles []airflow.UserRole) types.List {
+func apiUserRolesToTfStringSet(roles []airflow.UserRole) types.Set {
 	var roleStrings []attr.Value
 	for _, r := range roles {
 		roleStrings = append(roleStrings, types.StringValue(r.Name))
 	}
-	list, _ := types.ListValue(types.StringType, roleStrings)
+
+	list, _ := types.SetValue(types.StringType, roleStrings)
 
 	return list
 }
 
-
-func tfStringListToApiUserRoles(list types.List) []airflow.UserRole {
+func tfStringSetToApiUserRoles(set types.Set) []airflow.UserRole {
 	var roles []airflow.UserRole
-	if list.IsNull() || list.IsUnknown() {
+	if set.IsNull() || set.IsUnknown() {
 		return nil
 	}
 	
 	var rawRoles []types.String
-	list.ElementsAs(context.Background(), &rawRoles, false)
+	set.ElementsAs(context.Background(), &rawRoles, false)
 	for _, v := range rawRoles {
 		roles = append(roles, airflow.UserRole{Name: v.ValueString()})
 	}
@@ -122,7 +122,7 @@ func NewUserDataSourceModelFromApi(ctx context.Context, cli *airflow.Client, use
 		LastName:  types.StringValue(user.LastName),
 	}
 	
-	roles := apiUserRolesToTfStringList(user.Roles)
+	roles := apiUserRolesToTfStringSet(user.Roles)
 	model.Roles = roles
 
 	model.Active = types.BoolPointerValue(user.Active)

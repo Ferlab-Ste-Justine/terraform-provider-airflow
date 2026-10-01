@@ -28,7 +28,7 @@ func (d *AirflowFabRoleDataSource) Schema(_ context.Context, _ datasource.Schema
 		MarkdownDescription: "Fetches an Airflow FAB role.",
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{Required: true},
-			"permissions": schema.ListNestedAttribute{
+			"permissions": schema.SetNestedAttribute{
 				Computed:    true,
 				Description: "A list of permissions (action/resource pairs) assigned to the role.",
 				NestedObject: schema.NestedAttributeObject{

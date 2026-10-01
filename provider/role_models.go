@@ -17,12 +17,12 @@ type PermissionModel struct {
 
 type AirflowFabRoleResourceModel struct {
 	Name        types.String `tfsdk:"name"`
-	Permissions types.List   `tfsdk:"permissions"`
+	Permissions types.Set    `tfsdk:"permissions"`
 }
 
 type AirflowFabRoleDataSourceModel struct {
 	Name        types.String `tfsdk:"name"`
-	Permissions types.List   `tfsdk:"permissions"`
+	Permissions types.Set    `tfsdk:"permissions"`
 }
 
 func NewRoleResourceModelFromApi(ctx context.Context, cli *airflow.Client, name string) (*AirflowFabRoleResourceModel, error) {
@@ -33,7 +33,7 @@ func NewRoleResourceModelFromApi(ctx context.Context, cli *airflow.Client, name 
 
 	model := &AirflowFabRoleResourceModel{
 		Name:        types.StringValue(role.Name),
-		Permissions: apiActionsToTfList(role.Actions),
+		Permissions: apiActionsToTfSet(role.Actions),
 	}
 
 	return model, nil
@@ -47,7 +47,7 @@ func NewRoleDataSourceModelFromApi(ctx context.Context, cli *airflow.Client, nam
 
 	model := &AirflowFabRoleDataSourceModel{
 		Name:        types.StringValue(role.Name),
-		Permissions: apiActionsToTfList(role.Actions),
+		Permissions: apiActionsToTfSet(role.Actions),
 	}
 
 	return model, nil
@@ -56,13 +56,13 @@ func NewRoleDataSourceModelFromApi(ctx context.Context, cli *airflow.Client, nam
 func (model *AirflowFabRoleResourceModel) CreateRoleInApi(ctx context.Context, cli *airflow.Client) error {
 	return cli.CreateRole(ctx, airflow.CreateRoleRequest{
 		Name:    model.Name.ValueString(),
-		Actions: tfListToApiActions(model.Permissions),
+		Actions: tfSetToApiActions(model.Permissions),
 	})
 }
 
 func (model *AirflowFabRoleResourceModel) UpdateRoleInApi(ctx context.Context, cli *airflow.Client, preExistingName string) error {
 	name := model.Name.ValueString()
-	actions := tfListToApiActions(model.Permissions)
+	actions := tfSetToApiActions(model.Permissions)
 
 	return cli.UpdateRole(ctx, preExistingName, airflow.UpdateRoleRequest{
 		Name:    &name,
@@ -70,9 +70,9 @@ func (model *AirflowFabRoleResourceModel) UpdateRoleInApi(ctx context.Context, c
 	})
 }
 
-func apiActionsToTfList(actions []airflow.RoleAction) types.List {
+func apiActionsToTfSet(actions []airflow.RoleAction) types.Set {
 	if len(actions) == 0 {
-		return types.ListNull(types.ObjectType{
+		return types.SetNull(types.ObjectType{
 			AttrTypes: map[string]attr.Type{
 				"action":   types.StringType,
 				"resource": types.StringType,
@@ -94,17 +94,17 @@ func apiActionsToTfList(actions []airflow.RoleAction) types.List {
 		attrValues = append(attrValues, objVal)
 	}
 
-	list, _ := types.ListValue(types.ObjectType{AttrTypes: attrTypes}, attrValues)
+	list, _ := types.SetValue(types.ObjectType{AttrTypes: attrTypes}, attrValues)
 	return list
 }
 
-func tfListToApiActions(list types.List) []airflow.RoleAction {
-	if list.IsNull() || list.IsUnknown() {
+func tfSetToApiActions(set types.Set) []airflow.RoleAction {
+	if set.IsNull() || set.IsUnknown() {
 		return nil
 	}
 
 	var permissions []PermissionModel
-	list.ElementsAs(context.Background(), &permissions, false)
+	set.ElementsAs(context.Background(), &permissions, false)
 
 	var apiActions []airflow.RoleAction
 	for _, p := range permissions {

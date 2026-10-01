@@ -36,7 +36,7 @@ func (r *AirflowFabUserResource) Schema(_ context.Context, _ resource.SchemaRequ
 			"email":      schema.StringAttribute{Required: true},
 			"first_name": schema.StringAttribute{Required: true},
 			"last_name":  schema.StringAttribute{Required: true},
-			"roles": schema.ListAttribute{
+			"roles": schema.SetAttribute{
 				ElementType: types.StringType,
 				Required:    true,
 			},

@@ -30,7 +30,7 @@ func (r *AirflowFabRoleResource) Schema(_ context.Context, _ resource.SchemaRequ
 			"name": schema.StringAttribute{
 				Required: true,
 			},
-			"permissions": schema.ListNestedAttribute{
+			"permissions": schema.SetNestedAttribute{
 				Optional:    true,
 				Description: "A list of permissions (action/resource pairs) assigned to the role.",
 				NestedObject: schema.NestedAttributeObject{
