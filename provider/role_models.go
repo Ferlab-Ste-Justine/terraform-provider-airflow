@@ -25,8 +25,8 @@ type AirflowFabRoleDataSourceModel struct {
 	Permissions types.List   `tfsdk:"permissions"`
 }
 
-func NewRoleResourceModelFromApi(cli *airflow.Client, name string) (*AirflowFabRoleResourceModel, error) {
-	role, err := cli.GetRole(name)
+func NewRoleResourceModelFromApi(ctx context.Context, cli *airflow.Client, name string) (*AirflowFabRoleResourceModel, error) {
+	role, err := cli.GetRole(ctx, name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch role: %w", err)
 	}
@@ -39,8 +39,8 @@ func NewRoleResourceModelFromApi(cli *airflow.Client, name string) (*AirflowFabR
 	return model, nil
 }
 
-func NewRoleDataSourceModelFromApi(cli *airflow.Client, name string) (*AirflowFabRoleDataSourceModel, error) {
-	role, err := cli.GetRole(name)
+func NewRoleDataSourceModelFromApi(ctx context.Context, cli *airflow.Client, name string) (*AirflowFabRoleDataSourceModel, error) {
+	role, err := cli.GetRole(ctx, name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch role: %w", err)
 	}
@@ -53,18 +53,18 @@ func NewRoleDataSourceModelFromApi(cli *airflow.Client, name string) (*AirflowFa
 	return model, nil
 }
 
-func (model *AirflowFabRoleResourceModel) CreateRoleInApi(cli *airflow.Client) error {
-	return cli.CreateRole(airflow.CreateRoleRequest{
+func (model *AirflowFabRoleResourceModel) CreateRoleInApi(ctx context.Context, cli *airflow.Client) error {
+	return cli.CreateRole(ctx, airflow.CreateRoleRequest{
 		Name:    model.Name.ValueString(),
 		Actions: tfListToApiActions(model.Permissions),
 	})
 }
 
-func (model *AirflowFabRoleResourceModel) UpdateRoleInApi(cli *airflow.Client, preExistingName string) error {
+func (model *AirflowFabRoleResourceModel) UpdateRoleInApi(ctx context.Context, cli *airflow.Client, preExistingName string) error {
 	name := model.Name.ValueString()
 	actions := tfListToApiActions(model.Permissions)
 
-	return cli.UpdateRole(preExistingName, airflow.UpdateRoleRequest{
+	return cli.UpdateRole(ctx, preExistingName, airflow.UpdateRoleRequest{
 		Name:    &name,
 		Actions: &actions,
 	})

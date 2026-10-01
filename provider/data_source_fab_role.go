@@ -68,7 +68,7 @@ func (d *AirflowFabRoleDataSource) Read(ctx context.Context, req datasource.Read
 	var config AirflowFabRoleDataSourceModel
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 
-	state, err := NewRoleDataSourceModelFromApi(d.client, config.Name.ValueString())
+	state, err := NewRoleDataSourceModelFromApi(ctx, d.client, config.Name.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Read Failed", err.Error())
 		return

@@ -2,6 +2,7 @@ package airflow
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -16,7 +17,7 @@ type TokenResponse struct {
 	AccessToken string `json:"access_token"`
 }
 
-func (cli *Client) GetAccessToken() error {
+func (cli *Client) GetAccessToken(ctx context.Context) error {
 	payload := TokenRequest{
 		Username: cli.conf.Auth.Username,
 		Password: cli.conf.Auth.Password,
@@ -27,11 +28,12 @@ func (cli *Client) GetAccessToken() error {
 		return fmt.Errorf("Failed to marshal token request body: %w", err)
 	}
 
-	authUrl, err := cli.BuildUrl("/auth/token") 
+	authUrl, err := cli.BuildUrl("/auth/token")
 	if err != nil {
 		return err
 	}
 
+	cli.LogRequest(ctx, http.MethodPost, authUrl, "")
 	req, err := http.NewRequest(http.MethodPost, authUrl, bytes.NewBuffer(body))
 	if err != nil {
 		return fmt.Errorf("Failed to create token request: %w", err)
@@ -45,7 +47,11 @@ func (cli *Client) GetAccessToken() error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("Token request failed with status: %d", resp.StatusCode)
+		msg := getErrorBody(resp)
+		if msg != "" {
+			return fmt.Errorf("token request failed with status %d: %s", resp.StatusCode, msg)
+		}
+		return fmt.Errorf("token request failed with status %d", resp.StatusCode)
 	}
 
 	var tokenResp TokenResponse

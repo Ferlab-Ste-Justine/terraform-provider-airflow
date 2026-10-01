@@ -67,13 +67,13 @@ func (r *AirflowFabUserResource) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	err := plan.CreateUserInApi(r.client)
+	err := plan.CreateUserInApi(ctx, r.client)
 	if err != nil {
 		resp.Diagnostics.AddError("Creation Failed", err.Error())
 		return
 	}
 
-	state, diagErr := NewUserResourceModelFromApi(r.client, plan.Username.ValueString())
+	state, diagErr := NewUserResourceModelFromApi(ctx, r.client, plan.Username.ValueString())
 	if diagErr != nil {
 		resp.Diagnostics.AddError("State Refresh Failed", diagErr.Error())
 		return
@@ -95,7 +95,7 @@ func (r *AirflowFabUserResource) Read(ctx context.Context, req resource.ReadRequ
 	var state AirflowFabUserResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	
-	newState, err := NewUserResourceModelFromApi(r.client, state.Username.ValueString())
+	newState, err := NewUserResourceModelFromApi(ctx, r.client, state.Username.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Read Failed", err.Error())
 		return
@@ -118,13 +118,13 @@ func (r *AirflowFabUserResource) Update(ctx context.Context, req resource.Update
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
-	err := plan.UpdateUserInApi(r.client, state.Username.ValueString())
+	err := plan.UpdateUserInApi(ctx, r.client, state.Username.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Update Failed", err.Error())
 		return
 	}
 
-	newState, err := NewUserResourceModelFromApi(r.client, plan.Username.ValueString())
+	newState, err := NewUserResourceModelFromApi(ctx, r.client, plan.Username.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("State Refresh Failed", err.Error())
 		return
@@ -146,7 +146,7 @@ func (r *AirflowFabUserResource) Delete(ctx context.Context, req resource.Delete
 	var state AirflowFabUserResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
-	err := r.client.DeleteUser(state.Username.ValueString())
+	err := r.client.DeleteUser(ctx, state.Username.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Delete Failed", err.Error())
 		return

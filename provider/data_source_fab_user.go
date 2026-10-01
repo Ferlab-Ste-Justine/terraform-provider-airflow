@@ -66,7 +66,7 @@ func (d *AirflowFabUserDataSource) Read(ctx context.Context, req datasource.Read
 	var config AirflowFabUserDataSourceModel
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 
-	state, err := NewUserDataSourceModelFromApi(d.client, config.Username.ValueString())
+	state, err := NewUserDataSourceModelFromApi(ctx, d.client, config.Username.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Read Failed", err.Error())
 		return

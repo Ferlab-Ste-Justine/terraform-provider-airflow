@@ -73,13 +73,13 @@ func (r *AirflowFabRoleResource) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	err := plan.CreateRoleInApi(r.client)
+	err := plan.CreateRoleInApi(ctx, r.client)
 	if err != nil {
 		resp.Diagnostics.AddError("Creation Failed", err.Error())
 		return
 	}
 
-	state, diagErr := NewRoleResourceModelFromApi(r.client, plan.Name.ValueString())
+	state, diagErr := NewRoleResourceModelFromApi(ctx, r.client, plan.Name.ValueString())
 	if diagErr != nil {
 		resp.Diagnostics.AddError("State Refresh Failed", diagErr.Error())
 		return
@@ -100,7 +100,7 @@ func (r *AirflowFabRoleResource) Read(ctx context.Context, req resource.ReadRequ
 	var state AirflowFabRoleResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
-	newState, err := NewRoleResourceModelFromApi(r.client, state.Name.ValueString())
+	newState, err := NewRoleResourceModelFromApi(ctx, r.client, state.Name.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Read Failed", err.Error())
 		return
@@ -122,13 +122,13 @@ func (r *AirflowFabRoleResource) Update(ctx context.Context, req resource.Update
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
-	err := plan.UpdateRoleInApi(r.client, state.Name.ValueString())
+	err := plan.UpdateRoleInApi(ctx, r.client, state.Name.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Update Failed", err.Error())
 		return
 	}
 
-	newState, err := NewRoleResourceModelFromApi(r.client, plan.Name.ValueString())
+	newState, err := NewRoleResourceModelFromApi(ctx, r.client, plan.Name.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("State Refresh Failed", err.Error())
 		return
@@ -149,7 +149,7 @@ func (r *AirflowFabRoleResource) Delete(ctx context.Context, req resource.Delete
 	var state AirflowFabRoleResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
-	err := r.client.DeleteRole(state.Name.ValueString())
+	err := r.client.DeleteRole(ctx, state.Name.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Delete Failed", err.Error())
 		return

@@ -33,8 +33,8 @@ type AirflowFabUserResourceModel struct {
 	Roles     types.List   `tfsdk:"roles"`
 }
 
-func NewUserResourceModelFromApi(cli *airflow.Client, username string) (*AirflowFabUserResourceModel, error) {
-	user, err := cli.GetUser(username)
+func NewUserResourceModelFromApi(ctx context.Context, cli *airflow.Client, username string) (*AirflowFabUserResourceModel, error) {
+	user, err := cli.GetUser(ctx, username)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch user: %w", err)
 	}
@@ -52,10 +52,10 @@ func NewUserResourceModelFromApi(cli *airflow.Client, username string) (*Airflow
 	return model, nil
 }
 
-func (model *AirflowFabUserResourceModel) CreateUserInApi(cli *airflow.Client) error {
+func (model *AirflowFabUserResourceModel) CreateUserInApi(ctx context.Context, cli *airflow.Client) error {
 	roles := convertStringListToRoles(model.Roles)
 
-	return cli.CreateUser(airflow.CreateUserRequest{
+	return cli.CreateUser(ctx, airflow.CreateUserRequest{
 		Username:  model.Username.ValueString(),
 		Password:  model.Password.ValueString(),
 		Email:     model.Email.ValueString(),
@@ -65,7 +65,7 @@ func (model *AirflowFabUserResourceModel) CreateUserInApi(cli *airflow.Client) e
 	})
 }
 
-func (model *AirflowFabUserResourceModel) UpdateUserInApi(cli *airflow.Client, preExistingUsername string) error {
+func (model *AirflowFabUserResourceModel) UpdateUserInApi(ctx context.Context, cli *airflow.Client, preExistingUsername string) error {
 	roles := convertStringListToRoles(model.Roles)
 
 	username := model.Username.ValueString()
@@ -74,7 +74,7 @@ func (model *AirflowFabUserResourceModel) UpdateUserInApi(cli *airflow.Client, p
 	firstName := model.FirstName.ValueString()
 	lastName := model.LastName.ValueString()
 
-	return cli.UpdateUser(preExistingUsername, airflow.UpdateUserRequest{
+	return cli.UpdateUser(ctx, preExistingUsername, airflow.UpdateUserRequest{
 		Username:  &username,
 		Password:  &password,
 		Email:     &email,
@@ -109,8 +109,8 @@ func convertStringListToRoles(list types.List) []airflow.UserRole {
 	return roles
 }
 
-func NewUserDataSourceModelFromApi(cli *airflow.Client, username string) (*AirflowFabUserDataSourceModel, error) {
-	user, err := cli.GetUser(username)
+func NewUserDataSourceModelFromApi(ctx context.Context, cli *airflow.Client, username string) (*AirflowFabUserDataSourceModel, error) {
+	user, err := cli.GetUser(ctx, username)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch user: %w", err)
 	}

@@ -79,7 +79,9 @@ func (p AirflowProvider) Configure(ctx context.Context, req provider.ConfigureRe
 		return
 	}
 
-	accessTokenErr := client.GetAccessToken()
+	client.SetLogger(&Logger{})
+
+	accessTokenErr := client.GetAccessToken(ctx)
 	if accessTokenErr != nil {
 		resp.Diagnostics.AddError(
 			"Error fetching access token for Airflow client",

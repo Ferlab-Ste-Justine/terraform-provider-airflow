@@ -2,6 +2,7 @@ package airflow
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,49 +14,50 @@ type UserRole struct {
 }
 
 type CreateUserRequest struct {
-	Username   string       `json:"username"`
-	Email      string       `json:"email"`
-	FirstName  string       `json:"first_name"`
-	LastName   string       `json:"last_name"`
-	Roles      []UserRole   `json:"roles"`
-	Password   string       `json:"password"`
+	Username  string     `json:"username"`
+	Email     string     `json:"email"`
+	FirstName string     `json:"first_name"`
+	LastName  string     `json:"last_name"`
+	Roles     []UserRole `json:"roles"`
+	Password  string     `json:"password"`
 }
 
 type UpdateUserRequest struct {
-	Username   *string     `json:"username,omitempty"`
-	Email      *string     `json:"email,omitempty"`
-	FirstName  *string     `json:"first_name,omitempty"`
-	LastName   *string     `json:"last_name,omitempty"`
-	Roles      *[]UserRole `json:"roles,omitempty"`
-	Password   *string     `json:"password,omitempty"`
+	Username  *string     `json:"username,omitempty"`
+	Email     *string     `json:"email,omitempty"`
+	FirstName *string     `json:"first_name,omitempty"`
+	LastName  *string     `json:"last_name,omitempty"`
+	Roles     *[]UserRole `json:"roles,omitempty"`
+	Password  *string     `json:"password,omitempty"`
 }
 
 type GetUserResponse struct {
-	Username         string     `json:"username"`
-	Email            string     `json:"email"`
-	FirstName        string     `json:"first_name"`
-	LastName         string     `json:"last_name"`
-	Roles            []UserRole `json:"roles"`
-	Active           *bool      `json:"active"`
-	LastLogin        *string    `json:"last_login"` // date-time
-	LoginCount       *int64     `json:"login_count"`
-	FailLoginCount   *int64     `json:"fail_login_count"`
-	CreatedOn        *string    `json:"created_on"` // date-time
-	ChangedOn        *string    `json:"changed_on"` // date-time
+	Username       string     `json:"username"`
+	Email          string     `json:"email"`
+	FirstName      string     `json:"first_name"`
+	LastName       string     `json:"last_name"`
+	Roles          []UserRole `json:"roles"`
+	Active         *bool      `json:"active"`
+	LastLogin      *string    `json:"last_login"`
+	LoginCount     *int64     `json:"login_count"`
+	FailLoginCount *int64     `json:"fail_login_count"`
+	CreatedOn      *string    `json:"created_on"`
+	ChangedOn      *string    `json:"changed_on"`
 }
 
-func (cli *Client) CreateUser(userReq CreateUserRequest) error {
+func (cli *Client) CreateUser(ctx context.Context, userReq CreateUserRequest) error {
 	body, err := json.Marshal(userReq)
 	if err != nil {
 		return fmt.Errorf("Failed to marshal create user request: %w", err)
 	}
 
-	usersUrl, err := cli.BuildUrl("/auth/fab/v1/users") 
+	usersUrl, err := cli.BuildUrl("/auth/fab/v1/users")
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, usersUrl, bytes.NewBuffer(body))
+	cli.LogRequest(ctx, http.MethodPost, usersUrl, string(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, usersUrl, bytes.NewBuffer(body))
 	if err != nil {
 		return fmt.Errorf("Failed to create create user request: %w", err)
 	}
@@ -69,19 +71,24 @@ func (cli *Client) CreateUser(userReq CreateUserRequest) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("create user request failed with status: %d", resp.StatusCode)
+		msg := getErrorBody(resp)
+		if msg != "" {
+			return fmt.Errorf("create user request failed with status %d: %s", resp.StatusCode, msg)
+		}
+		return fmt.Errorf("create user request failed with status %d", resp.StatusCode)
 	}
 
 	return nil
 }
 
-func (cli *Client) GetUser(username string) (*GetUserResponse, error) {
-	userUrl, err := cli.BuildUrl(fmt.Sprintf("/auth/fab/v1/users/%s", url.PathEscape(username))) 
+func (cli *Client) GetUser(ctx context.Context, username string) (*GetUserResponse, error) {
+	userUrl, err := cli.BuildUrl(fmt.Sprintf("/auth/fab/v1/users/%s", url.PathEscape(username)))
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodGet, userUrl, nil)
+	cli.LogRequest(ctx, http.MethodGet, userUrl, "")
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, userUrl, nil)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create get user request: %w", err)
 	}
@@ -94,7 +101,11 @@ func (cli *Client) GetUser(username string) (*GetUserResponse, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("Get user request failed with status: %d", resp.StatusCode)
+		msg := getErrorBody(resp)
+		if msg != "" {
+			return nil, fmt.Errorf("get user request failed with status %d: %s", resp.StatusCode, msg)
+		}
+		return nil, fmt.Errorf("get user request failed with status %d", resp.StatusCode)
 	}
 
 	var result GetUserResponse
@@ -105,8 +116,8 @@ func (cli *Client) GetUser(username string) (*GetUserResponse, error) {
 	return &result, nil
 }
 
-func (cli *Client) UpdateUser(username string, updateReq UpdateUserRequest) error {
-	userUrl, err := cli.BuildUrl(fmt.Sprintf("/auth/fab/v1/users/%s", url.PathEscape(username))) 
+func (cli *Client) UpdateUser(ctx context.Context, username string, updateReq UpdateUserRequest) error {
+	userUrl, err := cli.BuildUrl(fmt.Sprintf("/auth/fab/v1/users/%s", url.PathEscape(username)))
 	if err != nil {
 		return err
 	}
@@ -116,7 +127,8 @@ func (cli *Client) UpdateUser(username string, updateReq UpdateUserRequest) erro
 		return fmt.Errorf("Failed to marshal update user request: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPatch, userUrl, bytes.NewBuffer(body))
+	cli.LogRequest(ctx, http.MethodPatch, userUrl, string(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, userUrl, bytes.NewBuffer(body))
 	if err != nil {
 		return fmt.Errorf("Failed to create update user request: %w", err)
 	}
@@ -130,19 +142,24 @@ func (cli *Client) UpdateUser(username string, updateReq UpdateUserRequest) erro
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("Update user request failed with status: %d", resp.StatusCode)
+		msg := getErrorBody(resp)
+		if msg != "" {
+			return fmt.Errorf("update user request failed with status %d: %s", resp.StatusCode, msg)
+		}
+		return fmt.Errorf("update user request failed with status %d", resp.StatusCode)
 	}
 
 	return nil
 }
 
-func (cli *Client) DeleteUser(username string) error {
-	userUrl, err := cli.BuildUrl(fmt.Sprintf("/auth/fab/v1/users/%s", url.PathEscape(username))) 
+func (cli *Client) DeleteUser(ctx context.Context, username string) error {
+	userUrl, err := cli.BuildUrl(fmt.Sprintf("/auth/fab/v1/users/%s", url.PathEscape(username)))
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodDelete, userUrl, nil)
+	cli.LogRequest(ctx, http.MethodDelete, userUrl, "")
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, userUrl, nil)
 	if err != nil {
 		return fmt.Errorf("Failed to create delete user request: %w", err)
 	}
@@ -155,7 +172,11 @@ func (cli *Client) DeleteUser(username string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("Delete user request failed with status: %d", resp.StatusCode)
+		msg := getErrorBody(resp)
+		if msg != "" {
+			return fmt.Errorf("delete user request failed with status %d: %s", resp.StatusCode, msg)
+		}
+		return fmt.Errorf("delete user request failed with status %d", resp.StatusCode)
 	}
 
 	return nil

@@ -1,6 +1,7 @@
 package airflow
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
@@ -49,6 +50,7 @@ type Client struct {
 	conf        *ClientConfig
 	handle      *http.Client
 	accessToken string
+	logger      Logger
 }
 
 func NewClient(conf *ClientConfig) (*Client, error) {
@@ -68,6 +70,19 @@ func NewClient(conf *ClientConfig) (*Client, error) {
 		},
 		conf: conf,
 	}, nil
+}
+
+func (cli *Client) SetLogger(logger Logger) {
+	cli.logger = logger
+}
+
+func (cli *Client) LogRequest(ctx context.Context, method string, url string, body string) {
+	if cli.logger != nil {
+		cli.logger.Info(ctx, fmt.Sprintf("REQUEST -> %s %s", method, url))
+		if body != "" {
+			cli.logger.Debug(ctx, fmt.Sprintf("\n*****REQUEST BODY*****\n%s\n**********************\n", body))
+		}
+	}
 }
 
 func (cli *Client) BuildUrl(path string) (string, error) {
